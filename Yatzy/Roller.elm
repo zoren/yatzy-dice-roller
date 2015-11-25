@@ -4,7 +4,7 @@ import Graphics.Element exposing (..)
 import Random
 import Keyboard
 
-type Action = Roll
+type Action = Roll | Hold Int | Reset
 
 -- Main
 
@@ -40,10 +40,19 @@ update action (eyeList, seed) =
       case eyeList of
         [] -> roll ([0,0,0,0,0], seed)
         _ -> roll (eyeList, seed)
+    Reset -> (eyeList, seed)
+    Hold _ -> (eyeList, seed)
+
 
 -- Signals
-enterOrSpace = Signal.mergeMany [Keyboard.enter, Keyboard.space]
-inputs = Signal.map (\_ -> Roll) <| Signal.filter (\b -> b) False enterOrSpace
+digit = Signal.filter (\val-> val > 48 && val <= 57 || val == 32) 0 Keyboard.presses
+intToAction d =
+  case d of
+    32 -> Roll
+    48 -> Reset
+    d -> Hold <| d - 48
+
+inputs = Signal.map intToAction digit
 model =
   Signal.foldp update initialModel inputs
 -- Ports
