@@ -1,5 +1,5 @@
 module Yatzy.Roller where
-
+import Color exposing(red)
 import Graphics.Element exposing (..)
 import Random
 import Keyboard
@@ -14,23 +14,25 @@ main = Signal.map view model
 initialModel = ([], initialSeed)
 
 -- View
-view1 : Int -> Element
-view1 eyes =
+view1 : (Int, Bool) -> Element
+view1 (eyes, isHeld) =
   let
     src = "../assets/" ++ (toString eyes) ++ ".png"
   in
-    image 50 50 src
+    if isHeld
+    then color red <| image 50 50 src
+    else image 50 50 src
 
 view (eyeList, _) =
   flow right (List.map view1 eyeList)
 
 -- Update
 roll (eyeList, seed) =
-  List.foldl (\x (al, s) ->
+  List.foldl (\(_, held) (al, s) ->
           let
             (eye, s') = randomSide s
           in
-            (eye :: al, s'))
+            ((eye, held) :: al, s'))
           ([], seed)
           eyeList
 
@@ -38,10 +40,12 @@ update action (eyeList, seed) =
   case action of
     Roll ->
       case eyeList of
-        [] -> roll ([0,0,0,0,0], seed)
+        [] -> roll (List.repeat 5 (0, False), seed)
         _ -> roll (eyeList, seed)
     Reset -> (eyeList, seed)
-    Hold _ -> (eyeList, seed)
+    Hold i ->
+      let el = List.indexedMap (\i' (e, ih) -> (e, (i == i') /= ih)) eyeList in
+      (el, seed)
 
 
 -- Signals
@@ -50,7 +54,7 @@ intToAction d =
   case d of
     32 -> Roll
     48 -> Reset
-    d -> Hold <| d - 48
+    d -> Hold <| d - 48 - 1
 
 inputs = Signal.map intToAction digit
 model =
