@@ -42,7 +42,8 @@ update action (eyeList, seed) =
         _ -> roll (eyeList, seed)
 
 -- Signals
-inputs = Signal.map (\_ -> Roll) <| Signal.filter (\b -> b) False <| Keyboard.enter
+enterOrSpace = Signal.mergeMany [Keyboard.enter, Keyboard.space]
+inputs = Signal.map (\_ -> Roll) <| Signal.filter (\b -> b) False enterOrSpace
 model =
   Signal.foldp update initialModel inputs
 -- Ports
