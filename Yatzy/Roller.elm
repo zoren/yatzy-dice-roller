@@ -11,7 +11,7 @@ type Action = Roll
 main = Signal.map view model
 
 -- Model
-initialModel = ([1,1,1,1,1], initialSeed)
+initialModel = ([], initialSeed)
 
 -- View
 view1 : Int -> Element
@@ -25,15 +25,24 @@ view (eyeList, _) =
   flow right (List.map view1 eyeList)
 
 -- Update
+roll (eyeList, seed) =
+  List.foldl (\x (al, s) ->
+          let
+            (eye, s') = randomSide s
+          in
+            (eye :: al, s'))
+          ([], seed)
+          eyeList
+
 update action (eyeList, seed) =
   case action of
-    Roll -> List.foldl (\x (al, s) ->
-                    let (eye, s') = randomSide s in (eye :: al, s'))
-                    ([], seed)
-                    eyeList
+    Roll ->
+      case eyeList of
+        [] -> roll ([0,0,0,0,0], seed)
+        _ -> roll (eyeList, seed)
 
 -- Signals
-inputs = Signal.map (\_ -> Roll) <| Keyboard.isDown 32
+inputs = Signal.map (\_ -> Roll) <| Signal.filter (\b -> b) False <| Keyboard.enter
 model =
   Signal.foldp update initialModel inputs
 -- Ports
